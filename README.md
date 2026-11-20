@@ -71,4 +71,12 @@ The passwords aren't case sensitive. Once it's running you can change them from 
 
 ## Licence
 
-Free and open source under the [MIT licence](LICENSE). Use it, change it and share it.
+Copyright © 2026 Simon Paul Jones.
+
+This is free software under the [GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0). In plain terms:
+
+- You can use it, change it and share it, free of charge.
+- If you share it, or a changed version of it, you must share the source code too, under the same licence.
+- If you run a changed version as a website for other people, you must offer them its source code as well.
+
+So it stays free for everyone, and nobody can take it and lock it away.
