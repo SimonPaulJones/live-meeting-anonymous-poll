@@ -1,0 +1,10 @@
+# Your own settings (copy the .example files)
+public/config.php
+scripts/deploy.env
+
+# Live poll state written by the server
+public/data/*
+!public/data/.htaccess
+
+# System files
+.DS_Store

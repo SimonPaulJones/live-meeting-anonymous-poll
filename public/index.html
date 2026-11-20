@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Live Poll</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232a78d6'/%3E%3Crect x='7' y='16' width='4' height='9' rx='1.5' fill='white'/%3E%3Crect x='14' y='8' width='4' height='17' rx='1.5' fill='white'/%3E%3Crect x='21' y='12' width='4' height='13' rx='1.5' fill='white'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+
+<main>
+  <!-- Login: one box for everyone. The password decides voter or host. -->
+  <section id="login" class="screen" hidden>
+    <form id="login-form" class="card login-card" autocomplete="off">
+      <h1>Join the poll</h1>
+      <p class="muted">Type the password from the call.</p>
+      <input id="pw" type="password" placeholder="Password" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Password">
+      <button class="btn primary big" type="submit">Join</button>
+      <p id="login-err" class="err" role="alert"></p>
+      <p class="fine">Votes are anonymous. Nobody, not even the host, can see what you picked.</p>
+    </form>
+  </section>
+
+  <!-- Voter -->
+  <section id="voter" class="screen" hidden>
+    <div id="v-wait" class="card waiting">
+      <span class="pulse" aria-hidden="true"></span>
+      <h2>Waiting for the next question…</h2>
+      <p class="muted">Keep this page open. It updates by itself.</p>
+    </div>
+    <div id="v-poll" hidden>
+      <div id="v-results" class="card results-card" hidden></div>
+      <div class="card">
+        <h1 id="v-question" class="question"></h1>
+        <div id="v-options" class="vote-options"></div>
+        <p id="v-note" class="fine center"></p>
+      </div>
+      <div id="v-hidden" class="card hidden-msg" hidden></div>
+    </div>
+  </section>
+
+  <!-- Host -->
+  <section id="admin" class="screen" hidden>
+    <form id="setup" class="card setup" hidden>
+      <div class="setup-head">
+        <h1>New poll</h1>
+        <div class="head-right">
+          <button type="button" id="s-cancel" class="link" hidden>Back to current poll</button>
+          <button type="button" class="btn icon more-btn" aria-label="More options" aria-haspopup="menu"><span></span></button>
+        </div>
+      </div>
+
+      <label class="field">
+        <span>Question <em>(optional)</em></span>
+        <input id="s-question" type="text" maxlength="120" placeholder="e.g. Have you ever felt like an impostor at work?">
+      </label>
+
+      <label class="field">
+        <span class="field-row">Options, one per line
+          <button type="button" id="s-reset" class="chip-btn">↺ Yes / Maybe / No</button>
+        </span>
+        <textarea id="s-options" rows="4" spellcheck="false"></textarea>
+      </label>
+
+      <div class="setting">
+        <span class="setting-label">Results</span>
+        <div class="seg" id="s-live" data-name="live">
+          <button type="button" data-v="1">Live</button>
+          <button type="button" data-v="0">When I reveal</button>
+        </div>
+      </div>
+      <div class="setting">
+        <span class="setting-label">Show as</span>
+        <div class="seg chart-seg" id="s-chart" data-name="chart"></div>
+      </div>
+      <div class="setting">
+        <span class="setting-label">Include</span>
+        <div class="toggles" id="s-show"></div>
+      </div>
+
+      <div class="go-row">
+        <button type="button" id="s-end" class="link" hidden>Clear screen for everyone</button>
+        <button type="submit" class="btn go">Go</button>
+      </div>
+      <p id="s-err" class="err" role="alert"></p>
+    </form>
+
+    <div id="a-live" hidden>
+      <div id="a-board" class="card board"></div>
+      <div class="bar-controls card">
+        <div class="ctl-row">
+          <button id="a-reveal" class="btn primary"></button>
+          <button id="a-open" class="btn"></button>
+          <span id="a-status" class="status"></span>
+          <button id="a-new" class="btn">New poll</button>
+          <button type="button" class="btn icon more-btn" aria-label="More options" aria-haspopup="menu"><span></span></button>
+        </div>
+        <div class="ctl-row small">
+          <div class="seg chart-seg" id="a-chart" data-name="chart"></div>
+          <div class="toggles" id="a-show"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- Host's ⋯ menu -->
+<div id="menu" class="menu" role="menu" hidden>
+  <button type="button" id="m-pw" role="menuitem">Change passwords…</button>
+  <button type="button" id="m-kick" role="menuitem">Log out all spectators</button>
+</div>
+
+<dialog id="pw-dialog" class="dialog">
+  <form id="pw-form">
+    <h2>Change passwords</h2>
+    <label class="field">
+      <span>Spectator password</span>
+      <input id="pw-voter" type="text" maxlength="40" autocomplete="off" spellcheck="false">
+    </label>
+    <label class="field">
+      <span>Host password</span>
+      <input id="pw-admin" type="password" maxlength="40" autocomplete="new-password" placeholder="Leave blank to keep it">
+    </label>
+    <p class="fine">Not case sensitive. People already in stay in: use “Log out all spectators” to make them type the new one.</p>
+    <p id="pw-err" class="err" role="alert"></p>
+    <div class="dialog-buttons">
+      <button type="button" id="pw-cancel" class="btn">Cancel</button>
+      <button type="submit" class="btn primary">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast" class="toast" role="status" hidden></div>
+
+<footer class="corner">
+  <span id="conn" class="conn" hidden>Reconnecting…</span>
+  <button id="logout" class="link" hidden>Log out</button>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

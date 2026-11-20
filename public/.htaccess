@@ -1,0 +1,14 @@
+# Live Poll: always fetch fresh copies so a redeploy reaches everyone on the call.
+<IfModule mod_headers.c>
+  <FilesMatch "\.(html|js|css)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>
+DirectoryIndex index.html
+
+# Settings files: never served
+<FilesMatch "^config(\.example)?\.php$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+</FilesMatch>
