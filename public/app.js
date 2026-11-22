@@ -30,12 +30,15 @@ function randomId() {
   return Array.from(a, (b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-// The room comes from the link (?p=…). Without one, the page is the host login, which creates a new room.
-// A host's token for each of their rooms is kept in this browser; a host link (#host=…) brings it to another one.
-const room = (new URLSearchParams(location.search).get('p') || '').toLowerCase();
+// The room comes from the link (…/livepoll/<room>; old ?p=<room> links still work). Without one, the page is the
+// host login, which creates a new room. A host's token for each of their rooms is kept in this browser; a host link
+// (#host=…) brings it to another one.
+const BASE = new URL('.', document.baseURI).href;
+const room = ((location.pathname.match(/\/([a-f0-9]{16})$/) || [])[1]
+  || (new URLSearchParams(location.search).get('p') || '').toLowerCase().replace(/[^a-f0-9]/g, '')).slice(0, 16);
 const hashHost = location.hash.match(/host=([a-f0-9]{64})/);
 if (room && hashHost) store.set('host.' + room, hashHost[1]);
-if (hashHost) history.replaceState(null, '', location.pathname + location.search);
+if (room && (hashHost || location.search)) history.replaceState(null, '', BASE + room);
 store.del('token'); // left over from the single-poll version
 let token = room ? store.get('host.' + room, null) : null;
 let clientId = store.get('client', null);
@@ -47,8 +50,7 @@ let setupOpen = false;   // host is preparing a new poll
 let failures = 0;
 let timer = null;
 
-function baseUrl() { return location.origin + location.pathname; }
-function voterLink() { return baseUrl() + '?p=' + room; }
+function voterLink() { return BASE + room; }
 function hostLink() { return voterLink() + '#host=' + token; }
 
 // ---------- server ----------
@@ -110,7 +112,7 @@ $('login-form').addEventListener('submit', async (e) => {
     if (!r.ok) { $('login-err').textContent = 'That password didn’t work. Try again.'; $('pw').select(); return; }
     store.set('host.' + r.data.room, r.data.token);
     store.set('lastRoom', r.data.room);
-    location.href = baseUrl() + '?p=' + r.data.room;
+    location.href = BASE + r.data.room;
   } catch (err) {
     $('login-err').textContent = 'Can’t reach the poll. Check your connection.';
   }
@@ -120,7 +122,7 @@ $('logout').addEventListener('click', () => {
   api('leave').catch(() => {});
   store.del('host.' + room);
   if (store.get('lastRoom', null) === room) store.del('lastRoom');
-  location.href = baseUrl();
+  location.href = BASE;
 });
 
 // ---------- rendering ----------
@@ -134,7 +136,7 @@ function render() {
     show('login');
     const last = store.get('lastRoom', null);
     $('last-room-p').hidden = !(last && store.get('host.' + last, null));
-    if (last) $('last-room').href = '?p=' + last;
+    if (last) $('last-room').href = BASE + last;
     setTimeout(() => $('pw').focus(), 0);
     return;
   }
@@ -488,6 +490,10 @@ async function copy(text, msg) {
   try { await navigator.clipboard.writeText(text); toast(msg); }
   catch (e) { window.prompt('Copy this link:', text); }
 }
+// The link box can be closed (remembered in this browser); "Show voter link" in the ⋯ menu brings it back.
+function setShareClosed(closed) { store.set('shareClosed', closed); render(); }
+$('share-close').addEventListener('click', () => setShareClosed(true));
+$('m-show-link').addEventListener('click', () => { closeMenu(); setShareClosed(false); });
 $('share-copy').addEventListener('click', () => copy(voterLink(), 'Link copied. Paste it into the meeting chat.'));
 $('m-link').addEventListener('click', () => { closeMenu(); copy(voterLink(), 'Voter link copied'); });
 $('m-host').addEventListener('click', () => { closeMenu(); copy(hostLink(), 'Host link copied. Keep it to yourself.'); });
@@ -507,6 +513,9 @@ $('m-delete').addEventListener('click', async () => {
 let setupInitialised = false;
 function renderAdmin() {
   show('admin');
+  const shareClosed = !!store.get('shareClosed', false);
+  $('share').hidden = shareClosed;
+  $('m-show-link').hidden = !shareClosed;
   $('share-url').textContent = voterLink().replace(/^https?:\/\//, '');
   const p = state.poll;
   if (!setupInitialised) { setupInitialised = true; if (!p) openSetup(); }

@@ -25,11 +25,10 @@
     </form>
   </section>
 
-  <!-- The room was deleted by its host, or cleaned up after a long time unused -->
+  <!-- Wrong link, or the room was deleted or cleaned up. Deliberately says nothing more. -->
   <section id="ended" class="screen" hidden>
     <div class="card waiting">
-      <h2>This poll has ended</h2>
-      <p class="muted">The link no longer works. Ask the host for a new one.</p>
+      <h2>404 Poll not found</h2>
     </div>
   </section>
 
@@ -53,10 +52,11 @@
 
   <!-- Host -->
   <section id="admin" class="screen" hidden>
-    <div class="card share">
+    <div id="share" class="card share">
       <span class="share-label">Join at</span>
       <span id="share-url" class="share-url"></span>
       <button type="button" id="share-copy" class="btn">Copy link</button>
+      <button type="button" id="share-close" class="btn icon close-btn" aria-label="Close the link box">×</button>
     </div>
     <form id="setup" class="card setup" hidden>
       <div class="setup-head">
@@ -123,6 +123,7 @@
 
 <!-- Host's ⋯ menu -->
 <div id="menu" class="menu" role="menu" hidden>
+  <button type="button" id="m-show-link" role="menuitem" hidden>Show voter link</button>
   <button type="button" id="m-link" role="menuitem">Copy voter link</button>
   <button type="button" id="m-host" role="menuitem">Copy host link (to run it on another device)</button>
   <button type="button" id="m-delete" role="menuitem">Delete this poll…</button>

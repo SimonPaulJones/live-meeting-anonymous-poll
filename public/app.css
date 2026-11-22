@@ -75,10 +75,12 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 .share-label { color: var(--ink-2); font-weight: 600; }
 .share-url { font-size: 20px; font-weight: 700; color: var(--accent-ink); word-break: break-all; flex: 1 1 280px; }
 .share .btn { padding: 8px 14px; }
+.share .btn.close-btn { padding: 0; width: 40px; height: 40px; font-size: 24px; line-height: 1; color: var(--ink-2); }
 
 /* Waiting */
 .waiting { text-align: center; padding: 48px 24px; }
 .waiting h2 { font-size: 24px; margin: 18px 0 6px; }
+#ended h2 { margin: 0; }
 .waiting p { margin: 0; }
 .pulse { display: inline-block; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); animation: pulse 1.6s ease-in-out infinite; }
 @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(42, 120, 214, .45); } 50% { box-shadow: 0 0 0 14px rgba(42, 120, 214, 0); } }

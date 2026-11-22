@@ -10,8 +10,10 @@ people answer honestly, and everyone gets to see how common a feeling really is.
 
 ## How it works on a call
 
-1. **Log in as a host** with the host password. That starts a new, empty poll room with its own link.
-2. **Send everyone the link** in the meeting chat (it's at the top of your screen, with a **Copy link** button).
+1. **Log in as a host** with the host password. That starts a new, empty poll room with its own link,
+   like `yoursite.com/livepoll/6a39e359380f6c32`.
+2. **Send everyone the link** in the meeting chat (it's at the top of your screen, with a **Copy link** button;
+   close that box with **×** once everyone's in, and bring it back from the ⋯ menu).
    There's no password for them: the link takes them straight in. They see *"Waiting for the next question…"*.
 3. **Share your screen**, and **ask your question** out loud. The answers are *Yes / Maybe / No* unless you type your own, one per line.
 4. **Press Go.** The buttons appear on everyone's screen straight away. Nobody needs to refresh.
@@ -37,11 +39,13 @@ Everything the host needs fits on one screen, because that's the screen everyone
 - **Show as:** a bar chart, a pie chart or just big numbers. You can switch at any time.
 - **Include:** how many people are here, the number of votes, percentages, and a "Didn't vote" slice.
 - **Close voting** to freeze the answers, and **Reopen** if you need to.
-- **The ⋯ menu:** copy the link for voters, copy a host link to run the poll from another device, or
-  **delete the poll** when the meeting is over (everyone with the link then sees *"This poll has ended"*).
+- **The ⋯ menu:** show or copy the link for voters, copy a host link to run the poll from another device, or
+  **delete the poll** when the meeting is over (the link then just shows *"404 Poll not found"*).
 - Polls that nobody has had open for a day are deleted automatically.
 
 ![Setting up a new poll](docs/screenshots/2-host-setup.png)
+
+<img src="docs/screenshots/1-start.png" width="600" alt="The host login, which starts a new poll">
 
 | Hidden until you reveal | Pie chart | Big numbers |
 |---|---|---|
@@ -55,7 +59,8 @@ as everyone else. While results are hidden, the totals aren't even sent to anyon
 
 ## Putting it on your own website
 
-You need ordinary web hosting that runs **PHP** (version 5.6 or newer). There's no database and nothing to install.
+You need ordinary web hosting that runs **PHP** (version 5.6 or newer) on Apache with `mod_rewrite` (for the
+short poll links). There's no database and nothing to install.
 
 1. Copy everything inside the `public` folder to a folder on your website, for example `yoursite.com/poll/`.
 2. In that folder, make a copy of `config.example.php` called `config.php`, open it and choose the host password.
@@ -71,6 +76,8 @@ The password isn't case sensitive. Give it to everyone who should be able to run
   Pages check for updates about once a second.
 - `public/api.php` is the server side. Each room is saved as a file in `public/data/rooms/`, which the included `.htaccess`
   blocks from the web (on Apache; on other servers, block that folder yourself).
+- `node scripts/screenshots.js` checks the main screens in a headless browser (with a stand-in for `api.php`, so no
+  PHP or server is needed) and saves the screenshots in `docs/screenshots/` at the same time.
 - `scripts/deploy.sh` copies the site to a server over SSH. Copy `scripts/deploy.env.example` to `scripts/deploy.env`
   and fill in your server details first.
 

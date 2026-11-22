@@ -12,3 +12,9 @@ DirectoryIndex index.html
     Require all denied
   </IfModule>
 </FilesMatch>
+
+# Poll links: /livepoll/<room id> is served by room.php (a real 404 when the poll doesn't exist)
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^([a-f0-9]{16})$ room.php?r=$1 [L,QSA]
+</IfModule>
