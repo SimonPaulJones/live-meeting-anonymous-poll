@@ -60,7 +60,8 @@ as everyone else. While results are hidden, the totals aren't even sent to anyon
 ## Putting it on your own website
 
 You need ordinary web hosting that runs **PHP** (version 5.6 or newer) on Apache with `mod_rewrite` (for the
-short poll links). There's no database and nothing to install.
+short poll links). On nginx, send `^/<folder>/[a-f0-9]{16}$` to `room.php` and block the `data` folder yourself.
+Without that, links fall back to `…/?p=<poll>`. There's no database and nothing to install.
 
 1. Copy everything inside the `public` folder to a folder on your website, for example `yoursite.com/poll/`.
 2. In that folder, make a copy of `config.example.php` called `config.php`, open it and choose the host password.

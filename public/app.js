@@ -38,7 +38,16 @@ const room = ((location.pathname.match(/\/([a-f0-9]{16})$/) || [])[1]
   || (new URLSearchParams(location.search).get('p') || '').toLowerCase().replace(/[^a-f0-9]/g, '')).slice(0, 16);
 const hashHost = location.hash.match(/host=([a-f0-9]{64})/);
 if (room && hashHost) store.set('host.' + room, hashHost[1]);
-if (room && (hashHost || location.search)) history.replaceState(null, '', BASE + room);
+// Short links need the server's rewrite (room.php); check once, otherwise use …/?p=<room>.
+let shortLinks = store.get('shortLinks', null);
+const roomUrl = (r) => BASE + (shortLinks ? r : '?p=' + r);
+async function checkShortLinks(r) {
+  try { shortLinks = (await fetch(BASE + r, { method: 'HEAD', cache: 'no-store' })).ok; } catch (e) { shortLinks = false; }
+  store.set('shortLinks', shortLinks);
+  if (state) render();
+}
+if (room && hashHost) history.replaceState(null, '', roomUrl(room));
+if (room && /\/[a-f0-9]{16}$/.test(location.pathname)) { shortLinks = true; store.set('shortLinks', true); }
 store.del('token'); // left over from the single-poll version
 let token = room ? store.get('host.' + room, null) : null;
 let clientId = store.get('client', null);
@@ -50,7 +59,7 @@ let setupOpen = false;   // host is preparing a new poll
 let failures = 0;
 let timer = null;
 
-function voterLink() { return BASE + room; }
+function voterLink() { return roomUrl(room); }
 function hostLink() { return voterLink() + '#host=' + token; }
 
 // ---------- server ----------
@@ -112,7 +121,8 @@ $('login-form').addEventListener('submit', async (e) => {
     if (!r.ok) { $('login-err').textContent = 'That password didn’t work. Try again.'; $('pw').select(); return; }
     store.set('host.' + r.data.room, r.data.token);
     store.set('lastRoom', r.data.room);
-    location.href = BASE + r.data.room;
+    await checkShortLinks(r.data.room);
+    location.href = roomUrl(r.data.room);
   } catch (err) {
     $('login-err').textContent = 'Can’t reach the poll. Check your connection.';
   }
@@ -136,7 +146,7 @@ function render() {
     show('login');
     const last = store.get('lastRoom', null);
     $('last-room-p').hidden = !(last && store.get('host.' + last, null));
-    if (last) $('last-room').href = BASE + last;
+    if (last) $('last-room').href = roomUrl(last);
     setTimeout(() => $('pw').focus(), 0);
     return;
   }
@@ -513,6 +523,7 @@ $('m-delete').addEventListener('click', async () => {
 let setupInitialised = false;
 function renderAdmin() {
   show('admin');
+  if (!renderAdmin.checked) { renderAdmin.checked = true; checkShortLinks(room); }
   const shareClosed = !!store.get('shareClosed', false);
   $('share').hidden = shareClosed;
   $('m-show-link').hidden = !shareClosed;

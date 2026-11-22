@@ -25,6 +25,7 @@ const TYPES = { html: 'text/html', js: 'text/javascript', css: 'text/css' };
 // ---- stand-in for api.php (same responses, kept in memory) ----
 const rooms = {};
 let roomCount = 0;
+let rewrite = true; // false = a server without the short-link rule
 const tokenFor = (r) => 'f'.repeat(48) + r;
 function view(s, role, c) {
   const people = Object.keys(s.seen).filter((k) => !s.seen[k].admin);
@@ -46,6 +47,7 @@ async function handle(route) {
   if (rel !== 'api.php') {
     // like .htaccess + room.php: /livepoll/<room> is the page, with a 404 status for an unknown room
     const m = rel.match(/^[a-f0-9]{16}$/);
+    if (m && !rewrite) return route.fulfill({ status: 404, body: 'Not found' });
     const file = path.join(PUB, m || rel === '' ? 'index.html' : rel);
     if (!fs.existsSync(file)) return route.fulfill({ status: 404, body: 'Not found' });
     return route.fulfill({ status: m && !rooms[rel] ? 404 : 200, body: fs.readFileSync(file), contentType: TYPES[file.split('.').pop()] });
@@ -165,6 +167,14 @@ function check(ok, what) { console.log((ok ? 'ok   ' : 'FAIL ') + what); if (!ok
   await h.click('#a-live .more-btn'); await h.click('#m-delete'); await h.click('#m-delete');
   await v.waitForSelector('#ended:not([hidden])', { timeout: 5000 });
   check(!rooms[room] && await h.isVisible('#ended'), 'delete removes the room for host and voters');
+
+  // Server without the short-link rule: links fall back to ?p=
+  rewrite = false;
+  const f = await open(desk);
+  await f.goto(SITE); await f.fill('#pw', PW); await f.click('#login-form button[type=submit]');
+  await f.waitForURL(/\?p=[a-f0-9]{16}$/);
+  await f.waitForSelector('#setup:not([hidden])');
+  check((await f.textContent('#share-url')).includes('/?p='), 'without the rewrite, links fall back to ?p=');
 
   await browser.close();
   console.log(failed ? failed + ' check(s) failed' : 'All checks passed. Screenshots in docs/screenshots/');
