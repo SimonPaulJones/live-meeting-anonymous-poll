@@ -1,5 +1,6 @@
 <?php
-// Copy this file to config.php and choose your own starting passwords (lower case, not case sensitive).
-// Once it's running, the host can change both from the ⋯ menu without editing this file.
-define('DEFAULT_VOTER_PASSWORD', 'change-me');      // everyone on the call types this to vote
-define('DEFAULT_ADMIN_PASSWORD', 'change-me-too');  // the host types this to run the polls
+// Copy this file to config.php and choose the host password (not case sensitive).
+// Every host logs in with it; each login starts a new poll with its own link for voters, who need no password.
+define('ADMIN_PASSWORD', 'change-me');
+// Polls nobody has had open for this many hours are deleted (hosts can also delete their own).
+define('ROOM_TTL_HOURS', 24);

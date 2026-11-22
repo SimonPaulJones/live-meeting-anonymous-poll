@@ -68,6 +68,14 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 }
 #pw:focus { border-color: var(--accent); outline: none; }
 
+#last-room { color: var(--accent-ink); font-weight: 600; }
+
+/* Host: the voter link, always on screen so people can type it from the shared screen */
+.share { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 14px; padding: 14px 20px; }
+.share-label { color: var(--ink-2); font-weight: 600; }
+.share-url { font-size: 20px; font-weight: 700; color: var(--accent-ink); word-break: break-all; flex: 1 1 280px; }
+.share .btn { padding: 8px 14px; }
+
 /* Waiting */
 .waiting { text-align: center; padding: 48px 24px; }
 .waiting h2 { font-size: 24px; margin: 18px 0 6px; }
@@ -204,7 +212,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
   .big-count { font-size: 72px; }
 }
 
-/* Host's ⋯ menu, password dialog, toast */
+/* Host's ⋯ menu, toast */
 .btn.icon { padding: 0; width: 44px; height: 44px; display: inline-grid; place-items: center; }
 .more-btn span, .more-btn span::before, .more-btn span::after {
   width: 5px; height: 5px; border-radius: 50%; background: var(--ink-2); display: block; position: relative;
@@ -222,15 +230,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px
 }
 .menu button:hover { background: var(--track); }
 .menu button.confirm { background: #fbeaea; color: var(--danger); }
-.dialog {
-  border: 0; border-radius: var(--radius); padding: 26px; width: min(440px, calc(100vw - 32px));
-  box-shadow: 0 20px 60px rgba(20, 30, 50, .3); color: var(--ink);
-}
-.dialog::backdrop { background: rgba(20, 24, 32, .35); }
-.dialog form { display: flex; flex-direction: column; gap: 14px; }
-.dialog h2 { font-size: 22px; }
-.dialog .fine, .dialog .err { margin: 0; }
-.dialog-buttons { display: flex; justify-content: flex-end; gap: 10px; }
 .toast {
   position: fixed; left: 50%; top: 18px; transform: translateX(-50%); z-index: 30; background: var(--ink); color: #fff;
   padding: 10px 18px; border-radius: 999px; font-weight: 600; font-size: 15px; box-shadow: var(--shadow);

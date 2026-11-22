@@ -10,13 +10,16 @@ people answer honestly, and everyone gets to see how common a feeling really is.
 
 ## How it works on a call
 
-1. **Send everyone the link** in the meeting chat, and tell them the password.
-2. **Everyone opens it** on their phone or computer and types the password. They see *"Waiting for the next question…"*.
-3. **You (the host) log in** on the same page with the host password, and **share your screen**.
-4. **Ask your question** out loud. The answers are *Yes / Maybe / No* unless you type your own, one per line.
-5. **Press Go.** The buttons appear on everyone's screen straight away. Nobody needs to refresh.
-6. **People tap an answer.** They can change their mind until you close voting.
-7. **Reveal the results** when you're ready, or let everyone watch them come in live.
+1. **Log in as a host** with the host password. That starts a new, empty poll room with its own link.
+2. **Send everyone the link** in the meeting chat (it's at the top of your screen, with a **Copy link** button).
+   There's no password for them: the link takes them straight in. They see *"Waiting for the next question…"*.
+3. **Share your screen**, and **ask your question** out loud. The answers are *Yes / Maybe / No* unless you type your own, one per line.
+4. **Press Go.** The buttons appear on everyone's screen straight away. Nobody needs to refresh.
+5. **People tap an answer.** They can change their mind until you close voting.
+6. **Reveal the results** when you're ready, or let everyone watch them come in live.
+
+Several hosts can run polls at the same time. Each login gets its own room, completely separate from everyone
+else's, and hosts can't see each other's rooms.
 
 <p>
   <img src="docs/screenshots/3-phone-vote.png" width="260" alt="Voting on a phone">
@@ -34,7 +37,9 @@ Everything the host needs fits on one screen, because that's the screen everyone
 - **Show as:** a bar chart, a pie chart or just big numbers. You can switch at any time.
 - **Include:** how many people are here, the number of votes, percentages, and a "Didn't vote" slice.
 - **Close voting** to freeze the answers, and **Reopen** if you need to.
-- **The ⋯ menu:** change the passwords, or log every participant out so they have to type the password again.
+- **The ⋯ menu:** copy the link for voters, copy a host link to run the poll from another device, or
+  **delete the poll** when the meeting is over (everyone with the link then sees *"This poll has ended"*).
+- Polls that nobody has had open for a day are deleted automatically.
 
 ![Setting up a new poll](docs/screenshots/2-host-setup.png)
 
@@ -53,18 +58,18 @@ as everyone else. While results are hidden, the totals aren't even sent to anyon
 You need ordinary web hosting that runs **PHP** (version 5.6 or newer). There's no database and nothing to install.
 
 1. Copy everything inside the `public` folder to a folder on your website, for example `yoursite.com/poll/`.
-2. In that folder, make a copy of `config.example.php` called `config.php`, open it and choose your two passwords:
-   one for the people voting and one for you, the host.
-3. Make sure the web server can write to the `data` folder (that's where the current poll is kept).
+2. In that folder, make a copy of `config.example.php` called `config.php`, open it and choose the host password.
+   You can also change how long unused polls are kept (24 hours to start with).
+3. Make sure the web server can write to the `data` folder (that's where the polls are kept).
 4. Open the address in your browser. That's it.
 
-The passwords aren't case sensitive. Once it's running you can change them from the ⋯ menu instead of editing the file.
+The password isn't case sensitive. Give it to everyone who should be able to run polls.
 
 ### For developers
 
 - `public/index.html`, `app.js` and `app.css` are the whole page: plain HTML, CSS and JavaScript, no frameworks.
   Pages check for updates about once a second.
-- `public/api.php` is the server side. The current poll is saved in `public/data/`, which the included `.htaccess`
+- `public/api.php` is the server side. Each room is saved as a file in `public/data/rooms/`, which the included `.htaccess`
   blocks from the web (on Apache; on other servers, block that folder yourself).
 - `scripts/deploy.sh` copies the site to a server over SSH. Copy `scripts/deploy.env.example` to `scripts/deploy.env`
   and fill in your server details first.

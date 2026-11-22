@@ -30,43 +30,51 @@ function randomId() {
   return Array.from(a, (b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-let token = store.get('token', null);
+// The room comes from the link (?p=…). Without one, the page is the host login, which creates a new room.
+// A host's token for each of their rooms is kept in this browser; a host link (#host=…) brings it to another one.
+const room = (new URLSearchParams(location.search).get('p') || '').toLowerCase();
+const hashHost = location.hash.match(/host=([a-f0-9]{64})/);
+if (room && hashHost) store.set('host.' + room, hashHost[1]);
+if (hashHost) history.replaceState(null, '', location.pathname + location.search);
+store.del('token'); // left over from the single-poll version
+let token = room ? store.get('host.' + room, null) : null;
 let clientId = store.get('client', null);
 if (!clientId) { clientId = randomId(); store.set('client', clientId); }
 
 let state = null;        // last view from the server
+let ended = false;       // the room has been deleted or cleaned up
 let setupOpen = false;   // host is preparing a new poll
 let failures = 0;
 let timer = null;
 
+function baseUrl() { return location.origin + location.pathname; }
+function voterLink() { return baseUrl() + '?p=' + room; }
+function hostLink() { return voterLink() + '#host=' + token; }
+
 // ---------- server ----------
 async function api(a, body) {
-  const sent = token;
   const res = await fetch('api.php', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(Object.assign({ a, t: sent, c: clientId }, body || {})),
+    body: JSON.stringify(Object.assign({ a, r: room, t: token, c: clientId }, body || {})),
     cache: 'no-store',
   });
   let data = {};
   try { data = await res.json(); } catch (e) {}
-  // ignore a rejection of a token that has since been replaced (e.g. the host just changed their password)
-  if (res.status === 401 && a !== 'login' && token === sent) {
-    logout(data.error === 'kicked' ? 'The host logged everyone out. Type the password to join again.' : 'Please type the password again.');
-  }
+  if (res.status === 404 && a !== 'login') endRoom();
   return { ok: res.ok, status: res.status, data };
 }
 
 async function tick() {
   clearTimeout(timer);
-  if (!token) return;
+  if (!room || ended) return;
   try {
     const r = await api('state');
     if (r.ok) { failures = 0; apply(r.data); }
-    else failures++;
+    else if (r.status !== 404) failures++;
   } catch (e) { failures++; }
   $('conn').hidden = failures < 3;
-  if (token) timer = setTimeout(tick, failures ? Math.min(5000, POLL_MS * (failures + 1)) : POLL_MS);
+  if (!ended) timer = setTimeout(tick, failures ? Math.min(5000, POLL_MS * (failures + 1)) : POLL_MS);
 }
 
 function apply(view) {
@@ -75,24 +83,23 @@ function apply(view) {
   render();
 }
 
-function logout(msg) {
-  token = null;
+function endRoom() {
+  ended = true;
   state = null;
-  store.del('token');
   clearTimeout(timer);
-  $('login-err').textContent = msg || '';
+  if (token) { store.del('host.' + room); if (store.get('lastRoom', null) === room) store.del('lastRoom'); token = null; }
   render();
 }
 
 window.addEventListener('pagehide', () => {
-  if (token && navigator.sendBeacon) {
-    navigator.sendBeacon('api.php', new Blob([JSON.stringify({ a: 'leave', t: token, c: clientId })], { type: 'text/plain' }));
+  if (room && !ended && navigator.sendBeacon) {
+    navigator.sendBeacon('api.php', new Blob([JSON.stringify({ a: 'leave', r: room, t: token, c: clientId })], { type: 'text/plain' }));
   }
 });
 window.addEventListener('pageshow', (e) => { if (e.persisted) tick(); });
 document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
 
-// ---------- login ----------
+// ---------- host login: creates a new room and goes to it ----------
 $('login-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const pw = $('pw').value.trim();
@@ -101,27 +108,38 @@ $('login-form').addEventListener('submit', async (e) => {
   try {
     const r = await api('login', { password: pw });
     if (!r.ok) { $('login-err').textContent = 'That password didn’t work. Try again.'; $('pw').select(); return; }
-    token = r.data.token;
-    store.set('token', token);
-    $('pw').value = '';
-    tick();
+    store.set('host.' + r.data.room, r.data.token);
+    store.set('lastRoom', r.data.room);
+    location.href = baseUrl() + '?p=' + r.data.room;
   } catch (err) {
     $('login-err').textContent = 'Can’t reach the poll. Check your connection.';
   }
 });
 $('logout').addEventListener('click', () => {
-  if (token) api('leave').catch(() => {});
-  logout();
+  // Forget this room in this browser. The room itself stays until it's deleted or cleaned up.
+  api('leave').catch(() => {});
+  store.del('host.' + room);
+  if (store.get('lastRoom', null) === room) store.del('lastRoom');
+  location.href = baseUrl();
 });
 
 // ---------- rendering ----------
 function show(id) {
-  for (const s of ['login', 'voter', 'admin']) $(s).hidden = s !== id;
+  for (const s of ['login', 'ended', 'voter', 'admin']) $(s).hidden = s !== id;
 }
 
 function render() {
-  $('logout').hidden = !token;
-  if (!token || !state) { show('login'); if (!token) setTimeout(() => $('pw').focus(), 0); return; }
+  $('logout').hidden = !token || ended;
+  if (!room) {
+    show('login');
+    const last = store.get('lastRoom', null);
+    $('last-room-p').hidden = !(last && store.get('host.' + last, null));
+    if (last) $('last-room').href = '?p=' + last;
+    setTimeout(() => $('pw').focus(), 0);
+    return;
+  }
+  if (ended) { show('ended'); return; }
+  if (!state) return;
   document.body.classList.toggle('is-admin', state.role === 'admin');
   if (state.role === 'admin') renderAdmin(); else renderVoter();
 }
@@ -433,14 +451,14 @@ $('a-reveal').addEventListener('click', () => {
 $('a-open').addEventListener('click', () => setPoll({ open: !state.poll.open }));
 $('a-new').addEventListener('click', openSetup);
 
-// ⋯ menu: change passwords, log out all spectators.
+// ⋯ menu: copy the links, delete the room.
 const menu = $('menu');
 let menuFor = null;
 function closeMenu() {
   menu.hidden = true;
   menuFor = null;
-  $('m-kick').classList.remove('confirm');
-  $('m-kick').textContent = 'Log out all spectators';
+  $('m-delete').classList.remove('confirm');
+  $('m-delete').textContent = 'Delete this poll…';
 }
 document.querySelectorAll('.more-btn').forEach((btn) => btn.addEventListener('click', (e) => {
   e.stopPropagation();
@@ -466,46 +484,30 @@ function toast(msg) {
   toast.timer = setTimeout(() => { t.hidden = true; }, 3000);
 }
 
-$('m-kick').addEventListener('click', async () => {
-  const b = $('m-kick');
+async function copy(text, msg) {
+  try { await navigator.clipboard.writeText(text); toast(msg); }
+  catch (e) { window.prompt('Copy this link:', text); }
+}
+$('share-copy').addEventListener('click', () => copy(voterLink(), 'Link copied. Paste it into the meeting chat.'));
+$('m-link').addEventListener('click', () => { closeMenu(); copy(voterLink(), 'Voter link copied'); });
+$('m-host').addEventListener('click', () => { closeMenu(); copy(hostLink(), 'Host link copied. Keep it to yourself.'); });
+$('m-delete').addEventListener('click', async () => {
+  const b = $('m-delete');
   if (!b.classList.contains('confirm')) {
     b.classList.add('confirm');
-    b.textContent = 'Click again to log everyone out';
+    b.textContent = 'Click again to delete it for everyone';
     return;
   }
   closeMenu();
-  const r = await api('kick');
-  if (r.ok) { apply(r.data); toast('All spectators have been logged out'); }
-  else toast('Couldn’t log them out. Try again.');
-});
-
-$('m-pw').addEventListener('click', async () => {
-  closeMenu();
-  $('pw-err').textContent = '';
-  $('pw-admin').value = '';
-  $('pw-voter').value = '';
-  $('pw-dialog').showModal();
-  const r = await api('config');
-  if (r.ok) $('pw-voter').value = r.data.voter;
-  $('pw-voter').focus();
-  $('pw-voter').select();
-});
-$('pw-cancel').addEventListener('click', () => $('pw-dialog').close());
-$('pw-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const voter = $('pw-voter').value.trim();
-  if (!voter) { $('pw-err').textContent = 'The spectator password can’t be empty.'; return; }
-  const r = await api('passwords', { voter, admin: $('pw-admin').value.trim() });
-  if (!r.ok) { $('pw-err').textContent = (r.data && r.data.error) || 'Couldn’t save. Try again.'; return; }
-  token = r.data.token;
-  store.set('token', token);
-  $('pw-dialog').close();
-  toast('Passwords saved');
+  const r = await api('delete');
+  if (r.ok) endRoom();
+  else toast('Couldn’t delete it. Try again.');
 });
 
 let setupInitialised = false;
 function renderAdmin() {
   show('admin');
+  $('share-url').textContent = voterLink().replace(/^https?:\/\//, '');
   const p = state.poll;
   if (!setupInitialised) { setupInitialised = true; if (!p) openSetup(); }
   const inSetup = setupOpen || !p;

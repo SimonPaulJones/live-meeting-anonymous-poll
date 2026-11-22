@@ -12,16 +12,25 @@
 
 
 <main>
-  <!-- Login: one box for everyone. The password decides voter or host. -->
+  <!-- Host login: each login starts a new room with its own link for voters. Voters never log in. -->
   <section id="login" class="screen" hidden>
     <form id="login-form" class="card login-card" autocomplete="off">
-      <h1>Join the poll</h1>
-      <p class="muted">Type the password from the call.</p>
-      <input id="pw" type="password" placeholder="Password" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Password">
-      <button class="btn primary big" type="submit">Join</button>
+      <h1>Start a poll</h1>
+      <p class="muted">Type the host password. You’ll get a link to send to everyone on the call.</p>
+      <input id="pw" type="password" placeholder="Host password" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Host password">
+      <button class="btn primary big" type="submit">Start</button>
       <p id="login-err" class="err" role="alert"></p>
-      <p class="fine">Votes are anonymous. Nobody, not even the host, can see what you picked.</p>
+      <p id="last-room-p" class="fine" hidden><a id="last-room" href="#">Back to your last poll</a></p>
+      <p class="fine">Joining a poll? Use the link the host sent you. No password needed.</p>
     </form>
+  </section>
+
+  <!-- The room was deleted by its host, or cleaned up after a long time unused -->
+  <section id="ended" class="screen" hidden>
+    <div class="card waiting">
+      <h2>This poll has ended</h2>
+      <p class="muted">The link no longer works. Ask the host for a new one.</p>
+    </div>
   </section>
 
   <!-- Voter -->
@@ -44,6 +53,11 @@
 
   <!-- Host -->
   <section id="admin" class="screen" hidden>
+    <div class="card share">
+      <span class="share-label">Join at</span>
+      <span id="share-url" class="share-url"></span>
+      <button type="button" id="share-copy" class="btn">Copy link</button>
+    </div>
     <form id="setup" class="card setup" hidden>
       <div class="setup-head">
         <h1>New poll</h1>
@@ -109,29 +123,10 @@
 
 <!-- Host's ⋯ menu -->
 <div id="menu" class="menu" role="menu" hidden>
-  <button type="button" id="m-pw" role="menuitem">Change passwords…</button>
-  <button type="button" id="m-kick" role="menuitem">Log out all spectators</button>
+  <button type="button" id="m-link" role="menuitem">Copy voter link</button>
+  <button type="button" id="m-host" role="menuitem">Copy host link (to run it on another device)</button>
+  <button type="button" id="m-delete" role="menuitem">Delete this poll…</button>
 </div>
-
-<dialog id="pw-dialog" class="dialog">
-  <form id="pw-form">
-    <h2>Change passwords</h2>
-    <label class="field">
-      <span>Spectator password</span>
-      <input id="pw-voter" type="text" maxlength="40" autocomplete="off" spellcheck="false">
-    </label>
-    <label class="field">
-      <span>Host password</span>
-      <input id="pw-admin" type="password" maxlength="40" autocomplete="new-password" placeholder="Leave blank to keep it">
-    </label>
-    <p class="fine">Not case sensitive. People already in stay in: use “Log out all spectators” to make them type the new one.</p>
-    <p id="pw-err" class="err" role="alert"></p>
-    <div class="dialog-buttons">
-      <button type="button" id="pw-cancel" class="btn">Cancel</button>
-      <button type="submit" class="btn primary">Save</button>
-    </div>
-  </form>
-</dialog>
 
 <div id="toast" class="toast" role="status" hidden></div>
 

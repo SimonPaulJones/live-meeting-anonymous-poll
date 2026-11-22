@@ -1,6 +1,6 @@
 #!/bin/sh
 # Copies public/ to a web server over SSH. Settings come from scripts/deploy.env (copy deploy.env.example).
-# The server's poll state (data/state.json, data/config.php, data/secret.php, data/lock) is never overwritten.
+# The server's poll data (data/rooms/, data/secret.php, data/lock) is never overwritten.
 set -e
 cd "$(dirname "$0")/.."
 [ -f scripts/deploy.env ] || { echo "Copy scripts/deploy.env.example to scripts/deploy.env first." >&2; exit 1; }
@@ -15,7 +15,7 @@ fi
 ssh "$DEPLOY_SSH" "php -l" < public/api.php
 ssh "$DEPLOY_SSH" "mkdir -p '$DEPLOY_PATH/data'"
 rsync -rlt --delete --exclude .DS_Store \
-  --exclude 'data/state.json*' --exclude data/secret.php --exclude 'data/config.php*' --exclude data/lock \
+  --exclude 'data/state.json*' --exclude data/rooms --exclude data/secret.php --exclude 'data/config.php*' --exclude data/lock \
   public/ "$DEPLOY_SSH:$DEPLOY_PATH/"
 if [ -n "$DEPLOY_OWNER" ]; then
   ssh "$DEPLOY_SSH" "chown -R '$DEPLOY_OWNER' '$DEPLOY_PATH'"
