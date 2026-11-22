@@ -479,7 +479,10 @@ document.querySelectorAll('.more-btn').forEach((btn) => btn.addEventListener('cl
   menuFor = btn;
   menu.hidden = false;
   const r = btn.getBoundingClientRect();
-  menu.style.right = Math.max(8, innerWidth - r.right) + 'px';
+  // line up with the button's right edge, but always keep the whole menu on screen (on phones the button wraps left)
+  menu.style.left = '0px';
+  const w = Math.min(menu.offsetWidth, innerWidth - 16);
+  menu.style.left = Math.max(8, Math.min(r.right - w, innerWidth - 8 - w)) + 'px';
   // open upwards when the button is near the bottom of the window
   if (r.bottom + menu.offsetHeight + 12 > innerHeight) { menu.style.top = ''; menu.style.bottom = (innerHeight - r.top + 6) + 'px'; }
   else { menu.style.bottom = ''; menu.style.top = (r.bottom + 6) + 'px'; }

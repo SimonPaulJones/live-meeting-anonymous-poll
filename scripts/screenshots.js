@@ -156,6 +156,18 @@ function check(ok, what) { console.log((ok ? 'ok   ' : 'FAIL ') + what); if (!ok
   await h2.waitForSelector('#admin:not([hidden])');
   check(!h2.url().includes('#'), 'host link opens as host and hides the token from the address bar');
 
+  // ⋯ menu stays fully on screen on a phone (the button wraps to the left there) and on a desktop
+  const hp = await open(phone);
+  await hp.goto(hostLink);
+  await hp.waitForSelector('#a-live:not([hidden])');
+  for (const [pg, name] of [[hp, 'phone'], [h2, 'desktop']]) {
+    await pg.click('#a-live .more-btn');
+    const m = await pg.locator('#menu').boundingBox();
+    const vw = pg.viewportSize().width;
+    check(m.x >= 0 && m.x + m.width <= vw, `⋯ menu fits on the screen (${name}: ${Math.round(m.x)}–${Math.round(m.x + m.width)} of ${vw})`);
+    await pg.keyboard.press('Escape');
+  }
+
   // Unknown poll: 404 and nothing else
   const x = await open(phone);
   const r404 = await x.goto(SITE + '0123456789abcdef');
